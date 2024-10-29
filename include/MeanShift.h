@@ -26,7 +26,8 @@ public:
 
 #ifdef USE_CUDA
     // Function to run the Mean Shift algorithm on CUDA
-    void run_cuda(std::vector<Point>& points, const std::string& kernel_name, std::vector<IterationTime>& times, int& cluster_count);
+    void run_cuda(std::vector<Point>& points, const std::string& kernel_name,
+                  std::vector<IterationTime>& times, int& cluster_count, int threads_per_block);
 #endif
 
 private:
@@ -49,7 +50,8 @@ private:
     int count_clusters(const std::vector<Point>& points, double cluster_epsilon);
 
     // Save iteration data to a CSV file
-    void save_iteration_to_csv(const std::vector<Point>& points, const std::string& kernel_name, int iteration, size_t dataset_size, const std::string& mode);
+    void save_iteration_to_csv(const std::vector<Point>& points, const std::string& kernel_name,
+                               int iteration, size_t dataset_size, const std::string& mode);
 };
 
 #endif // MEANSHIFT_H
