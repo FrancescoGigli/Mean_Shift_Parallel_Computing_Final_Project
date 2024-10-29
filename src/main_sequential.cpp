@@ -7,7 +7,7 @@
 #include "Utils.h"
 
 int main() {
-    std::vector<size_t> sizes = { 10000,25000,50000,100000 };
+    std::vector<size_t> sizes = { 10000,25000,50000,100000};
     std::string data_dir = "generated_points";
 
     for (const auto& size : sizes) {
