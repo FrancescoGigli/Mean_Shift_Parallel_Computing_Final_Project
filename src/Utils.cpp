@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 
-// Funzione per leggere punti da un file CSV
+// Function to read points from a CSV file
 std::vector<Point> read_points_from_csv(const std::string& filename) {
     std::vector<Point> points;
     std::ifstream file(filename);
@@ -13,10 +13,10 @@ std::vector<Point> read_points_from_csv(const std::string& filename) {
     }
 
     std::string line;
-    // Ignora l'intestazione se presente
+    // Ignore the header if present
     if (std::getline(file, line)) {
         if (line.find("x,y") == std::string::npos && line.find("bandwidth,iteration,point_id,x,y") == std::string::npos) {
-            // Se la prima linea non è un'intestazione, processala
+            // If the first line is not a header, process it
             std::stringstream ss(line);
             std::string x_str, y_str;
             if (std::getline(ss, x_str, ',') && std::getline(ss, y_str, ',')) {
@@ -43,16 +43,8 @@ std::vector<Point> read_points_from_csv(const std::string& filename) {
     return points;
 }
 
-// Funzione per aprire un file di output
-std::ofstream open_output_file(const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Error: Unable to create file " << filename << "\n";
-    }
-    return file;
-}
 
-// Funzione per scrivere output su stream e file
+// Function to write output to both console and file
 void write_output(std::ostream& console, std::ofstream& file, const std::string& message) {
     console << message;
     if (file.is_open()) {

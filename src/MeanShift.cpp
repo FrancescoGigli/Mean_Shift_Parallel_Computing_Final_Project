@@ -18,29 +18,39 @@ MeanShift::MeanShift(double bandwidth, double epsilon, KernelType kernel_type, b
 // Kernel function
 double MeanShift::kernel_function(double distance) {
     if (kernel_type == FLAT) {
-        return (distance < bandwidth) ? 1.0 : 0.0;
+        return (distance <= bandwidth) ? 1.0 : 0.0;
     } else { // GAUSSIAN
         return std::exp(-distance * distance / (2 * bandwidth * bandwidth));
     }
 }
 
-// Compute mean shift for a point
+// Compute mean shift for a point using atomic operations or critical sections
 Point MeanShift::compute_mean_shift(Point& point, const std::vector<Point>& points) {
     double sum_x = 0.0, sum_y = 0.0;
     double sum_weight = 0.0;
 
     if (use_atomic) {
-#pragma omp parallel for if(parallel) num_threads(num_threads) reduction(+:sum_x, sum_y, sum_weight)
+        // Using atomic operations for accumulation
+#pragma omp parallel for if(parallel) num_threads(num_threads)
         for (int i = 0; i < static_cast<int>(points.size()); ++i) {
             double dist = euclidean_distance(point, points[i]);
             double weight = kernel_function(dist);
             if (weight > 0) {
+                // Atomic update of sum_x
+#pragma omp atomic
                 sum_x += points[i].x * weight;
+
+                // Atomic update of sum_y
+#pragma omp atomic
                 sum_y += points[i].y * weight;
+
+                // Atomic update of sum_weight
+#pragma omp atomic
                 sum_weight += weight;
             }
         }
     } else {
+        // Using critical sections for accumulation
 #pragma omp parallel for if(parallel) num_threads(num_threads)
         for (int i = 0; i < static_cast<int>(points.size()); ++i) {
             double dist = euclidean_distance(point, points[i]);
@@ -126,9 +136,19 @@ void MeanShift::run(std::vector<Point>& points, const std::string& kernel_name, 
             double shift_distance = euclidean_distance(points[i], new_point);
 
             if (shift_distance >= epsilon) {
+                if (use_atomic) {
+                    // Cannot use atomic for boolean assignment as OpenMP does not support atomic writes for bool types.
+                    // Therefore, we use a critical section to safely update the shared variable.
 #pragma omp critical
-                {
-                    all_converged = false;
+                    {
+                        all_converged = false;
+                    }
+                } else {
+                    // Using critical section to update the shared variable `all_converged`
+#pragma omp critical
+                    {
+                        all_converged = false;
+                    }
                 }
             } else {
                 new_point.converged = true;
@@ -136,6 +156,7 @@ void MeanShift::run(std::vector<Point>& points, const std::string& kernel_name, 
 
             new_points[i] = new_point;
 
+            // Optional: Display point details
             if (verbose_points) {
 #pragma omp critical
                 {
@@ -154,6 +175,7 @@ void MeanShift::run(std::vector<Point>& points, const std::string& kernel_name, 
         points = new_points;
         current_iteration++;
 
+        // Optional: Display iteration details
         if (verbose_iterations) {
             std::cout << "Iteration " << current_iteration << " completed in " << iter_duration.count() << " ms.\n";
             int converged_points = 0;

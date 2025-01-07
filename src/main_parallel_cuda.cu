@@ -13,7 +13,7 @@
 #include "Point.h"
 #include "Utils.h"
 
-namespace fs = std::filesystem;
+namespace fs = std::experimental::filesystem;
 
 // CUDA error checking macro
 #define CUDA_CHECK(call) \

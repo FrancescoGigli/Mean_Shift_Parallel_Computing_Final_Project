@@ -8,6 +8,8 @@
 #include "Utils.h"
 
 int main() {
+
+    //INITIALIZATION
     std::vector<size_t> sizes = { 10000, 25000, 50000, 100000 };
     std::string data_dir = "generated_points";
 
@@ -19,7 +21,7 @@ int main() {
             continue;
         }
 
-        // FLAT kernel configuration
+        // FLAT kernel Sequential Run
         double flat_bandwidth = 20.0;
         double flat_epsilon = 1.0;
 
@@ -37,6 +39,8 @@ int main() {
         int cluster_count_flat;
         mean_shift_flat.run(points, "flat", times_flat, cluster_count_flat);
 
+
+        //Save Flat Results
         double total_time_flat = 0.0;
         for (const auto& iter_time : times_flat) {
             std::string iter_message = "Iteration " + std::to_string(iter_time.iteration) + ": " + std::to_string(iter_time.iteration_time_ms) + " ms\n";
