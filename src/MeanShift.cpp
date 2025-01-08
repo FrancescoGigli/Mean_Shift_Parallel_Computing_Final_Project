@@ -29,33 +29,21 @@ Point MeanShift::compute_mean_shift(Point& point, const std::vector<Point>& poin
     double sum_x = 0.0, sum_y = 0.0;
     double sum_weight = 0.0;
 
-    if (use_atomic) {
-        // Using atomic operations for accumulation
 #pragma omp parallel for if(parallel) num_threads(num_threads)
-        for (int i = 0; i < static_cast<int>(points.size()); ++i) {
-            double dist = euclidean_distance(point, points[i]);
-            double weight = kernel_function(dist);
-            if (weight > 0) {
-                // Atomic update of sum_x
+    for (int i = 0; i < static_cast<int>(points.size()); ++i) {
+        double dist = euclidean_distance(point, points[i]);
+        double weight = kernel_function(dist);
+        if (weight > 0) {
+            if (use_atomic) {
+                // Atomic updates
 #pragma omp atomic
                 sum_x += points[i].x * weight;
-
-                // Atomic update of sum_y
 #pragma omp atomic
                 sum_y += points[i].y * weight;
-
-                // Atomic update of sum_weight
 #pragma omp atomic
                 sum_weight += weight;
-            }
-        }
-    } else {
-        // Using critical sections for accumulation
-#pragma omp parallel for if(parallel) num_threads(num_threads)
-        for (int i = 0; i < static_cast<int>(points.size()); ++i) {
-            double dist = euclidean_distance(point, points[i]);
-            double weight = kernel_function(dist);
-            if (weight > 0) {
+            } else {
+                // Critical section updates
 #pragma omp critical
                 {
                     sum_x += points[i].x * weight;
@@ -66,9 +54,12 @@ Point MeanShift::compute_mean_shift(Point& point, const std::vector<Point>& poin
         }
     }
 
-    if (sum_weight == 0.0) return point;
-
-    return Point(sum_x / sum_weight, sum_y / sum_weight);
+    // Normalize to compute the new point
+    if (sum_weight > 0) {
+        return Point(sum_x / sum_weight, sum_y / sum_weight);
+    } else {
+        return point; // No shift if weight is zero
+    }
 }
 
 // Count unique clusters
